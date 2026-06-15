@@ -4,7 +4,7 @@
 #   docker build -t pco-mcp:latest .
 #
 # Run (replace ./db with a persistent host path like /mnt/data/pco-mcp/db):
-#   docker run --rm -p 8000:8000 --env-file .env -v ./db:/app/db pco-mcp:latest
+#   docker run --rm -p 8011:8011 --env-file .env -v ./db:/app/db pco-mcp:latest
 
 # ---------------------------------------------------------------------------
 # Use 3.12-slim per the project plan. The deps tree (httpx, mcp, cryptography,
@@ -38,14 +38,14 @@ RUN mkdir -p /app/db && \
 
 USER pco
 
-EXPOSE 8000
+EXPOSE 8011
 
 # Healthcheck hits /health every 30s. Uses Python (already present) instead
 # of curl, so we don't have to apt-get install anything just for this.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request, sys; \
-sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=5).status == 200 else 1)" \
+sys.exit(0 if urllib.request.urlopen('http://localhost:8011/health', timeout=5).status == 200 else 1)" \
     || exit 1
 
 # Bind 0.0.0.0 inside the container so port-forwarding works from the host.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8011"]
