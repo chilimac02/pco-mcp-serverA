@@ -31,9 +31,9 @@ services:
     image: pco-mcp:latest
     container_name: pco-mcp
     volumes:
-      # IMPORTANT: change this to the actual host path on TrueNAS.
-      # The TrueNAS dataset must exist BEFORE the stack starts.
-      - /mnt/tank/apps/pco-mcp/db:/app/db
+      # TrueNAS dataset at /mnt/Greenwood Storage/pco-mcp. Quoted because of
+      # the space in the pool name; the dataset must exist BEFORE deploy.
+      - "/mnt/Greenwood Storage/pco-mcp:/app/db"
     environment:
       # All interpolated from Portainer's stack env settings (or local .env
       # for dev). Don't quote — Portainer handles values containing spaces.
