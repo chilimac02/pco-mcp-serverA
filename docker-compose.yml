@@ -1,0 +1,69 @@
+# PCO MCP Server — production stack for TrueNAS / Portainer.
+#
+# Two services on a shared private network:
+#   - pco-mcp     : the FastAPI/MCP app (no host ports exposed; only reachable
+#                   inside the Docker network)
+#   - cloudflared : Cloudflare Tunnel daemon that opens an outbound connection
+#                   to Cloudflare and pulls inbound HTTPS requests through.
+#                   The public hostname mapping lives in the Cloudflare Zero
+#                   Trust dashboard ("Public Hostname" -> http://pco-mcp:8000).
+#
+# Required env vars (set in Portainer or in .env):
+#   PCO_CLIENT_ID, PCO_CLIENT_SECRET
+#   PCO_REDIRECT_URI=https://pco-mcp.greenwoodbc.net/auth/callback
+#   PCO_SCOPES=services
+#   ENCRYPTION_KEY (Fernet — do NOT change after first run)
+#   SESSION_SECRET (random 48+ bytes)
+#   ADMIN_USERNAME, ADMIN_PASSWORD  (optional; enables /admin)
+#   CLOUDFLARE_TUNNEL_TOKEN          (from Cloudflare Zero Trust dashboard)
+#
+# Required volume on the TrueNAS host:
+#   /mnt/<pool>/apps/pco-mcp/db  (pre-create the dataset before deploying)
+#
+# Local development without Cloudflare: comment out the cloudflared service
+# and uncomment the `ports` block under pco-mcp so localhost:8000 works.
+
+services:
+  pco-mcp:
+    build: .
+    image: pco-mcp:latest
+    container_name: pco-mcp
+    # ports:
+    #   - "8000:8000"   # uncomment for local dev (no cloudflared)
+    volumes:
+      # IMPORTANT: change this to the actual host path on TrueNAS.
+      - /mnt/tank/apps/pco-mcp/db:/app/db
+    env_file:
+      - .env
+    networks:
+      - pco-mcp-net
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=5).status == 200 else 1)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pco-mcp-cloudflared
+    restart: unless-stopped
+    # `run` with no tunnel name uses TUNNEL_TOKEN; --no-autoupdate prevents
+    # the image from trying to overwrite itself.
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - pco-mcp-net
+    depends_on:
+      pco-mcp:
+        condition: service_healthy
+
+networks:
+  pco-mcp-net:
+    driver: bridge

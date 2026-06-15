@@ -1,0 +1,44 @@
+# Secrets — managed via env_file at runtime, never baked into the image.
+.env
+.env.local
+.env.*.local
+
+# Local Python virtualenv (Linux container can't use Windows venv anyway).
+.venv/
+venv/
+env/
+
+# Compiled / cache.
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Existing SQLite files — start fresh inside the image; production data
+# comes in via the bind-mounted volume on the host.
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# Dev / tooling that the runtime doesn't need.
+tools/
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+.claude/
+.DS_Store
+Thumbs.db
+
+# Docs (kept in the repo, not needed inside the container).
+README.md
+*.md
+
+# Docker artifacts (avoid recursive copies).
+Dockerfile
+docker-compose.yml
+.dockerignore
