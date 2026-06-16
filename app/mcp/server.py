@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from app.config import get_settings
 from app.mcp.context import get_current_session
@@ -39,6 +40,30 @@ def _build_mcp() -> FastMCP:
     main.py, giving us the public endpoint at exactly /mcp (not /mcp/mcp).
     """
     settings = get_settings()
+    # MCP's Streamable HTTP transport has DNS-rebinding protection that
+    # validates the Host header against an allowlist (returns 421 Misdirected
+    # Request on mismatch). We explicitly list:
+    #   - the public hostname (Cloudflare Tunnel terminates here)
+    #   - localhost variants used in dev + verify scripts
+    #   - the internal Docker service name (what cloudflared sends as Host
+    #     when forwarding from the tunnel to the origin container)
+    transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            "pco-mcp.greenwoodbc.net",
+            "pco-mcp:8011",
+            "pco-mcp",
+            "localhost:8000",
+            "localhost",
+            "127.0.0.1:8000",
+            "127.0.0.1",
+        ],
+        allowed_origins=[
+            "https://pco-mcp.greenwoodbc.net",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+        ],
+    )
     return FastMCP(
         name="planning-center",
         instructions=(
@@ -48,6 +73,7 @@ def _build_mcp() -> FastMCP:
         ),
         log_level=settings.log_level.upper(),
         streamable_http_path="/",
+        transport_security=transport_security,
     )
 
 
