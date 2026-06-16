@@ -48,4 +48,8 @@ sys.exit(0 if urllib.request.urlopen('http://localhost:8011/health', timeout=5).
     || exit 1
 
 # Bind 0.0.0.0 inside the container so port-forwarding works from the host.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8011"]
+# --forwarded-allow-ips='*' tells uvicorn to trust X-Forwarded-* (and the
+# Host header) from any client. Without this, uvicorn 0.34+ returns
+# 421 Misdirected Request when a proxy (Cloudflare Tunnel, NPM, etc.)
+# forwards requests with a Host header that doesn't match the bind address.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8011", "--forwarded-allow-ips", "*"]
