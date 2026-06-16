@@ -29,7 +29,9 @@ services:
   pco-mcp:
     build: .
     image: pco-mcp:latest
-    container_name: pco-mcp
+    # No container_name: let Compose derive it from the stack project so
+    # multiple instances (e.g. pco-mcpv2 alongside an older pco-mcp) can
+    # coexist on the same Docker host.
     volumes:
       # TrueNAS dataset at /mnt/Greenwood Storage/claude/pco-mcp (inside the
       # CLAUDE user's working area). Quoted because of the space in the pool
@@ -64,7 +66,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: pco-mcp-cloudflared
+    # No container_name (see pco-mcp note above).
     restart: unless-stopped
     # `tunnel run` with no name uses TUNNEL_TOKEN; --no-autoupdate prevents
     # the image from trying to overwrite itself at runtime.
