@@ -77,7 +77,11 @@ services:
       - pco-mcp-net
     depends_on:
       pco-mcp:
-        condition: service_healthy
+        # service_started (not service_healthy): we want cloudflared to come
+        # up alongside pco-mcp, not wait for the healthcheck. cloudflared
+        # retries its connection automatically, and pco-mcp's healthcheck is
+        # already useful via `docker ps` / Portainer without gating startup.
+        condition: service_started
 
 networks:
   pco-mcp-net:
