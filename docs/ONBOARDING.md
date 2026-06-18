@@ -6,19 +6,14 @@ what they can read/edit in PCO directly.
 
 ## Prerequisites
 
-Before you start, you need:
-
 - **Claude Desktop** installed — download from <https://claude.ai/download>
 - **A Planning Center account** that's already been added to Greenwood's
   PCO organization. (If you're not sure, ask Justin or whoever runs the
   PCO admin.)
 
-That's it. No Python, no command line, no editing config files.
+No Python, no command line, no editing config files.
 
 ## Step 1 — Get your personal session token
-
-Each person needs their own session token. Don't share tokens; PCO sees
-your actions as YOU.
 
 1. In any browser, open <https://pco-mcp.greenwoodbc.net/auth/login>
 2. Click **Connect with Planning Center →**
@@ -27,46 +22,60 @@ your actions as YOU.
 5. You'll land on a green page that says **"✓ Connected as [Your Name]"**
 6. **Copy the session token** displayed on the page — it's a long UUID
    like `9077ff0c-0500-45e5-b603-310d78b4a293`. Paste it somewhere safe
-   right now (password manager, encrypted note). You won't see it again
-   unless you log in fresh.
+   right now (password manager, encrypted note).
 
-> If you ever lose the token, just visit the same URL and log in
-> again — that mints a fresh one. Your old token will keep working too,
-> but you only really need one.
+> If you lose the token, just visit the same URL and log in again — that
+> mints a fresh one. Your old token also keeps working unless someone
+> revokes it; you only need one active.
 
-## Step 2 — Add the connector to Claude Desktop
+## Step 2 — Build your personal connector URL
 
-In Claude Desktop:
+Take the session token from Step 1 and paste it into the end of this URL,
+replacing `YOUR_TOKEN_HERE`:
 
-1. Click your profile (bottom-left) → **Settings** (the gear icon)
+```
+https://pco-mcp.greenwoodbc.net/mcp?token=YOUR_TOKEN_HERE
+```
+
+Example with a real token (yours will be different):
+
+```
+https://pco-mcp.greenwoodbc.net/mcp?token=9077ff0c-0500-45e5-b603-310d78b4a293
+```
+
+**Treat this URL like a password.** Don't share it, screenshot it, or
+paste it into shared chats — it contains your personal session token.
+
+## Step 3 — Add the connector to Claude Desktop
+
+1. In Claude Desktop, click your profile (bottom-left) → **Settings**
 2. Select **Connectors** in the sidebar
 3. Click **Add custom connector**
 4. Fill in the form:
    - **Name:** `Planning Center` (or any label you like)
-   - **URL:** `https://pco-mcp.greenwoodbc.net/mcp`
-   - **Authentication:** choose **Custom headers** (or "API key" → header form)
-   - **Header name:** `X-Session-Token`
-   - **Header value:** paste the UUID from Step 1
-5. Click **Save** / **Connect**
+   - **Remote MCP server URL:** paste the URL you built in Step 2 (the
+     one ending in `?token=YOUR_TOKEN`)
+   - **Advanced settings:** leave **OAuth Client ID** and **OAuth Client
+     Secret** empty — we don't use those.
+5. Click **Add**
 
-The connector should immediately show as connected with a tool count
-(should be **69 tools**).
+The connector should appear in your list. Click on it to confirm it's
+enabled, then check that the tool count shows **69 tools** (or similar)
+once the connection initializes.
 
-## Step 3 — Restart and try it
+## Step 4 — Restart and try it
 
 1. **Fully quit Claude Desktop.** Right-click the icon in the Windows
    tray (or macOS menu bar) → **Quit**. Closing the window isn't enough.
 2. Relaunch Claude Desktop.
 3. Open a new chat.
 4. Click the **tools icon** at the bottom of the message box (looks like
-   a hammer or wrench). You should see **Planning Center** with 69 tools
-   listed underneath.
-5. Type:
+   a hammer/wrench). You should see **Planning Center** listed.
+5. Try a query:
 
    > List my Planning Center service types.
 
-   You should get a real response with service types from Greenwood's
-   PCO. Try a few more queries:
+   You should get a real response. More to try:
 
    > Show me the most recent plan in Weekend Service.
    >
@@ -97,46 +106,62 @@ need.
 
 ## Security and privacy
 
-- **Your session token is personal.** Anyone with it can act as you in
-  PCO. Treat it like a password. Don't paste it in shared chats or
-  screenshots.
+- **Your connector URL contains your personal session token.** Anyone
+  with that URL can act as you in PCO. Treat it like a password. Don't
+  paste it in shared chats, screenshots, or anywhere a coworker or
+  attacker could see.
 - **You can revoke your own access anytime** by visiting
   `https://pco-mcp.greenwoodbc.net/auth/logout/YOUR-TOKEN-HERE` (replace
-  the placeholder). That deletes your session from the server. Your
-  Planning Center account is unaffected.
+  the placeholder with your token). That deletes your session from the
+  server. Your Planning Center account is unaffected.
 - **Tokens last as long as you stay active.** Planning Center's refresh
   tokens expire after 90 days of complete inactivity. If you don't use
   the connector for 90+ days you'll be asked to log in again at the same
-  URL.
+  URL — you'll then update the URL in your connector with the new token.
 - **The server admin can see who's connected** (name, email, last-used
-  time) and can revoke any session.
+  time) at `https://pco-mcp.greenwoodbc.net/admin` and can revoke any
+  session.
+
+## Updating your token
+
+If you ever need to swap your token (rotated, lost, expired):
+
+1. Visit <https://pco-mcp.greenwoodbc.net/auth/login> again and copy the
+   new token from the success page.
+2. In Claude Desktop → Settings → Connectors → click your Planning Center
+   connector to edit it.
+3. Replace the URL with one that has the new token at the end.
+4. Save.
 
 ## Troubleshooting
 
-**The connector won't enable / shows 0 tools**
-- Confirm you copied the WHOLE session token, no extra spaces.
-- Check that the URL is exactly `https://pco-mcp.greenwoodbc.net/mcp`
-  (with the `/mcp` on the end).
+**The connector adds but shows 0 tools / "failed to connect"**
+- Check that the URL is exactly
+  `https://pco-mcp.greenwoodbc.net/mcp?token=YOUR_TOKEN` — no typos, no
+  trailing whitespace, the `?token=` literal in front of the UUID.
 - Try `https://pco-mcp.greenwoodbc.net/health` in a browser — if that
   doesn't show `{"status":"ok"}`, the server is down; tell Justin.
+- Try opening
+  `https://pco-mcp.greenwoodbc.net/mcp?token=YOUR_TOKEN` directly in a
+  browser; you should see a JSON response (probably 405 Method Not
+  Allowed because browsers send GET — that's fine, it confirms the URL
+  is reachable and your token is recognized).
 
 **Claude says "session expired" or "please re-authenticate"**
-- Your PCO refresh token aged out (90+ days inactive). Go to
-  <https://pco-mcp.greenwoodbc.net/auth/login> and log in again; copy the
-  fresh token; update it in the Claude Desktop connector settings.
+- Your PCO refresh token aged out (90+ days inactive). Re-login at
+  <https://pco-mcp.greenwoodbc.net/auth/login>, get the new token, and
+  update your connector URL per "Updating your token" above.
 
 **A specific tool returns "403 Forbidden"**
 - That's PCO refusing the action based on your permissions. Not a bug.
-- Ask the PCO admin to grant you the relevant role if you need the access.
+- Ask the PCO admin to grant you the relevant role if you need access.
 
 **Tools icon shows other servers but not Planning Center**
 - Restart Claude Desktop completely (Quit, relaunch). The Connectors UI
-  only re-reads its state on launch.
+  only refreshes its state on launch.
 
-**I'm on an older Claude Desktop that doesn't have a Connectors UI**
-- Use the legacy config-file approach documented in
-  [`docs/CLIENTS.md`](CLIENTS.md). That route needs Python + the
-  `mcp-proxy` package on your machine.
+**I'm using a different AI client (Open WebUI, ChatGPT Desktop, etc.)**
+- See [`docs/CLIENTS.md`](CLIENTS.md) for per-client setup notes.
 
 ## Who to ask for help
 
