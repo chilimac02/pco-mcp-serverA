@@ -318,22 +318,16 @@ async def get_person_household_members(person_id: str) -> dict:
     session = get_current_session()
     client = PCOClient(session.access_token)
 
-    # 1. Fetch the person with their household relationship so we can find
-    #    the household_id without making a second listing call.
-    person_resp = await client.get(f"/people/v2/people/{person_id}")
-    person_data = person_resp.get("data") or {}
-    rels = person_data.get("relationships") or {}
-    household_rel = (rels.get("primary_household") or rels.get("households") or {}).get("data")
+    # 1. Find the person's household(s) via the dedicated subresource.
+    #    PCO's default /people/v2/people/{id} response does NOT include
+    #    relationship sideloads, so we hit /households directly instead
+    #    of fishing through the person record.
+    households_resp = await client.get(
+        f"/people/v2/people/{person_id}/households", params={"per_page": 100}
+    )
+    household_data = households_resp.get("data") or []
 
-    # `data` is either a single dict (primary_household) or a list (households).
-    if isinstance(household_rel, dict):
-        household_id = str(household_rel.get("id")) if household_rel.get("id") else None
-    elif isinstance(household_rel, list) and household_rel:
-        household_id = str(household_rel[0].get("id"))
-    else:
-        household_id = None
-
-    if not household_id:
+    if not household_data:
         return {
             "person_id": str(person_id),
             "household_id": None,
@@ -341,8 +335,12 @@ async def get_person_household_members(person_id: str) -> dict:
             "note": "This person has no household record in PCO People.",
         }
 
-    # 2. List the household's members. Uses the same endpoint as
-    #    list_household_members so semantics stay consistent.
+    # Use the first household. PCO People sometimes returns multiple
+    # households for a single person (e.g., split-family records);
+    # we surface that count so callers know if there's more to explore.
+    household_id = str(household_data[0].get("id"))
+
+    # 2. List the household's members.
     members_resp = await client.get(
         f"/people/v2/households/{household_id}/people", params={"per_page": 100}
     )
@@ -351,6 +349,7 @@ async def get_person_household_members(person_id: str) -> dict:
     return {
         "person_id": str(person_id),
         "household_id": household_id,
+        "household_count": len(household_data),
         "members": members,
         "count": len(members),
     }
