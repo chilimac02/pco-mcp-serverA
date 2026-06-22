@@ -85,10 +85,19 @@ once the connection initializes.
 
 ## What you can and can't do
 
-The server exposes the full Planning Center Services API — listing plans,
-songs, teams, volunteers, plan items, song arrangements, and so on. It
-also exposes write tools: create/update/delete plans, songs, blockouts,
-team assignments, etc.
+The server exposes most of Planning Center across these modules:
+
+- **Services** — plans, songs, arrangements, teams, volunteers, schedules
+- **People** — directory search, household management, workflows, lists,
+  custom fields, forms
+- **Groups** — small groups, members, events, locations, tags
+- **Calendar** — org-wide events, rooms/resources, bookings, conflicts
+- **Check-Ins** — events, locations, programmatic check-ins, headcounts
+- **Publishing** — sermon series and episodes (read-only)
+- **Registrations** — signups, attendees, categories (read + light writes)
+
+**Giving is intentionally not exposed** — payment data is sensitive enough
+that we don't want it touched by general AI workflows.
 
 **Whether a specific action succeeds depends on YOUR Planning Center
 permissions, not Claude's.** Examples:
@@ -124,7 +133,9 @@ need.
 
 ## Updating your token
 
-If you ever need to swap your token (rotated, lost, expired):
+If you ever need to swap your token (rotated, lost, expired, OR the
+server's authorized PCO scopes changed and your old token doesn't cover
+the new modules):
 
 1. Visit <https://pco-mcp.greenwoodbc.net/auth/login> again and copy the
    new token from the success page.
@@ -132,6 +143,11 @@ If you ever need to swap your token (rotated, lost, expired):
    connector to edit it.
 3. Replace the URL with one that has the new token at the end.
 4. Save.
+
+> If you set up the connector before People/Groups/Calendar/etc. were
+> added (i.e., when only Services was wired up), your old token only has
+> the `services` scope. Re-login at the URL above to mint a new token
+> with full module coverage.
 
 ## Troubleshooting
 
