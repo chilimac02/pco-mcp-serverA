@@ -304,6 +304,58 @@ async def list_household_members(household_id: str) -> dict:
     return paginated_response(response=response, items_key="people", offset=0, per_page=100)
 
 
+@mcp.tool(
+    name="get_person_household_members",
+    description=(
+        "Convenience: given a person_id, look up their household and return "
+        "all members. Use this to find someone's spouse, kids, or other "
+        "household members in a single call. Returns the household_id plus "
+        "the members list. If the person has no household associated, "
+        "`household_id` is null and `members` is empty."
+    ),
+)
+async def get_person_household_members(person_id: str) -> dict:
+    session = get_current_session()
+    client = PCOClient(session.access_token)
+
+    # 1. Fetch the person with their household relationship so we can find
+    #    the household_id without making a second listing call.
+    person_resp = await client.get(f"/people/v2/people/{person_id}")
+    person_data = person_resp.get("data") or {}
+    rels = person_data.get("relationships") or {}
+    household_rel = (rels.get("primary_household") or rels.get("households") or {}).get("data")
+
+    # `data` is either a single dict (primary_household) or a list (households).
+    if isinstance(household_rel, dict):
+        household_id = str(household_rel.get("id")) if household_rel.get("id") else None
+    elif isinstance(household_rel, list) and household_rel:
+        household_id = str(household_rel[0].get("id"))
+    else:
+        household_id = None
+
+    if not household_id:
+        return {
+            "person_id": str(person_id),
+            "household_id": None,
+            "members": [],
+            "note": "This person has no household record in PCO People.",
+        }
+
+    # 2. List the household's members. Uses the same endpoint as
+    #    list_household_members so semantics stay consistent.
+    members_resp = await client.get(
+        f"/people/v2/households/{household_id}/people", params={"per_page": 100}
+    )
+    members = [flatten_resource(d) for d in members_resp.get("data", [])]
+
+    return {
+        "person_id": str(person_id),
+        "household_id": household_id,
+        "members": members,
+        "count": len(members),
+    }
+
+
 # ===========================================================================
 # Lists
 # ===========================================================================
