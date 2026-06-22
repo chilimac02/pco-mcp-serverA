@@ -149,3 +149,11 @@ from app.mcp.tools import teams as _teams  # noqa: E402, F401
 from app.mcp.tools import volunteers as _volunteers  # noqa: E402, F401
 from app.mcp.tools import notes as _notes  # noqa: E402, F401
 from app.mcp.tools import song_tags as _song_tags  # noqa: E402, F401
+
+# Expansion: all PCO modules except Giving.
+from app.mcp.tools import people as _people  # noqa: E402, F401
+from app.mcp.tools import groups as _groups  # noqa: E402, F401
+from app.mcp.tools import calendar as _calendar  # noqa: E402, F401
+from app.mcp.tools import check_ins as _check_ins  # noqa: E402, F401
+from app.mcp.tools import publishing as _publishing  # noqa: E402, F401
+from app.mcp.tools import registrations as _registrations  # noqa: E402, F401
