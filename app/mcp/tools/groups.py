@@ -114,7 +114,19 @@ async def create_group(
     return flatten_resource(response.get("data"))
 
 
-@mcp.tool(name="update_group", description="Update a group's fields.")
+@mcp.tool(
+    name="update_group",
+    description=(
+        "Update a group's fields. WARNING: PCO restricts which Group "
+        "attributes are writable via the public API. As of late 2026, "
+        "ONLY `name` reliably accepts writes; `description`, "
+        "`contact_email`, `enrollment_strategy`, `location_type_preference`, "
+        "and `schedule` are managed exclusively in the Church Center UI by "
+        "group leaders and return 'cannot be assigned' if set via API. "
+        "If you need to bulk-edit those fields, you have to do it "
+        "manually in PCO Groups admin (https://groups.planningcenteronline.com)."
+    ),
+)
 async def update_group(
     group_id: str,
     name: str | None = None,
